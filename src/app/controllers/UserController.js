@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const { User } = require('../models');
+const { User, App, AppUser } = require('../models');
 require('dotenv').config();
 
 class UserController {
@@ -9,19 +9,38 @@ class UserController {
   }
 
   async create(req, res) {
-    const { email } = req.body;
+    const { email, appId } = req.body;
+    const app = await App.findByPk(appId);
+    if (await User.findOne({ where: { email } })) return res.status(400).json({ error: 'User already exists' });
 
-    if (await User.findOne({ where: { email } })) {
-      return res.status(400).json({ error: 'User already exists' });
-    }
+    if (!app) return res.status(400).json(`App '${appId}' does not exists`);
 
+    /**
+     * TODO: Implementar controle de transação
+     */
     try {
-      const user = await User.create(req.body);
+      const userCreated = await User.create(req.body, { raw: true });
+      if (app || app.length > 0) {
+        await userCreated.setApps(app);
+      }
 
-      if (!user) return res.status(400).json(`User '${email}' does not exists`);
+      const token = jwt.sign(
+        { id: userCreated.id, telephone: userCreated.telephone, appId },
+        process.env.SECRET,
+        {
+          expiresIn: 100000,
+        },
+      );
+      const { id } = userCreated;
 
-      const token = jwt.sign({ id: user.id, telephone: user.telephone }, process.env.SECRET, {
-        expiresIn: 100000,
+      const user = await User.findByPk(id, {
+        include: [
+          {
+            model: App,
+            as: 'apps',
+            through: { attributes: [] },
+          },
+        ],
       });
 
       return res.status(201).json({ user, token });
@@ -33,7 +52,15 @@ class UserController {
   async get(req, res) {
     const { id } = req.params;
 
-    const response = await User.findByPk(id);
+    const response = await User.findByPk(id, {
+      include: [
+        {
+          model: App,
+          as: 'apps',
+          through: { attributes: [] },
+        },
+      ],
+    });
 
     res.json(response);
   }
@@ -45,9 +72,9 @@ class UserController {
 
     if (!user) return res.status(400).json({ error: 'User not found' });
 
-    await user.update(req.body);
+    await User.update(req.body, { where: { id } });
 
-    return res.json(user.get());
+    return res.json(await User.findByPk(id));
   }
 
   async destroy(req, res) {

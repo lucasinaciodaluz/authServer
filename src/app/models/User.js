@@ -24,5 +24,13 @@ module.exports = (sequelize, DataTypes) => {
     return bcrypt.compare(pwd, this.password);
   };
 
+  User.associate = (models) => {
+    User.belongsToMany(models.App, {
+      through: 'AppUser',
+      foreingKey: 'app_id',
+      as: 'apps',
+    });
+  };
+
   return User;
 };

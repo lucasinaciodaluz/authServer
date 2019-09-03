@@ -7,10 +7,17 @@ const authMiddleware = require('./app/middlewares/auth');
 const AuthController = require('./app/controllers/AuthController');
 
 const UserController = require('./app/controllers/UserController');
+const AppController = require('./app/controllers/AppController');
 
 const UserValidator = require('./app/validators/User');
 
 const routes = express.Router();
+
+routes.get('/apps', AppController.list);
+routes.get('/apps/:id', AppController.get);
+routes.post('/apps', AppController.create);
+routes.put('/apps/:id', AppController.update);
+routes.delete('/apps/:id', AppController.destroy);
 
 routes.post('/authenticate', handle(AuthController.auth));
 routes.post('/users', validate(UserValidator), handle(UserController.create));

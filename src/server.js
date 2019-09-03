@@ -13,7 +13,7 @@ class App {
     this.sentry();
     this.middlewares();
     this.routes();
-    this.exception();
+    // this.exception();
   }
 
   sentry() {
