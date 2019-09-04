@@ -15,7 +15,7 @@ class AuthController {
 
     if (!user) return res.status(400).json(`User '${email}' does not exists`);
 
-    if (!(await bcrypt.compare(password, user.password))) return res.status(400).json('Invalid authentication');
+    if (!(await bcrypt.compare(password, user.password))) { return res.status(400).json('Invalid authentication'); }
 
     const token = jwt.sign({ id: user.id, telephone: user.telephone }, process.env.SECRET, {
       expiresIn: 100000,

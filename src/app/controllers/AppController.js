@@ -15,9 +15,9 @@ class AppController {
     }
     try {
       const app = await App.create(req.body);
-      return res.status(201).json({ app });
+      return res.status(201).json(app);
     } catch (error) {
-      console.log(error);
+      return res.status(500).send(error);
     }
   }
 
@@ -52,7 +52,7 @@ class AppController {
       console.log(error);
     }
 
-    return res.sendStatus(200);
+    return res.sendStatus(204);
   }
 }
 

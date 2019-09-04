@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const { User, App, AppUser } = require('../models');
+const { User, App } = require('../models');
 require('dotenv').config();
 
 class UserController {
@@ -10,18 +10,23 @@ class UserController {
 
   async create(req, res) {
     const { email, appId } = req.body;
-    const app = await App.findByPk(appId);
-    if (await User.findOne({ where: { email } })) return res.status(400).json({ error: 'User already exists' });
 
-    if (!app) return res.status(400).json(`App '${appId}' does not exists`);
+    if (await User.findOne({ where: { email } })) {
+      return res.status(400).json({ error: 'User already exists' });
+    }
 
     /**
      * TODO: Implementar controle de transação
      */
     try {
       const userCreated = await User.create(req.body, { raw: true });
-      if (app || app.length > 0) {
-        await userCreated.setApps(app);
+
+      if (appId) {
+        const app = await App.findByPk(appId);
+        if (!app) return res.status(400).json(`App '${appId}' does not exists`);
+        if (app || app.length > 0) {
+          await userCreated.setApps(app);
+        }
       }
 
       const token = jwt.sign(
@@ -31,6 +36,7 @@ class UserController {
           expiresIn: 100000,
         },
       );
+
       const { id } = userCreated;
 
       const user = await User.findByPk(id, {
